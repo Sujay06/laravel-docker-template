@@ -78,15 +78,14 @@ RUN printf "%s%s%s\n" \
         "http://nginx.org/packages/mainline/alpine/v" \
         `egrep -o '^[0-9]+\.[0-9]+' /etc/alpine-release` \
         "/main" \
-        | tee -a /etc/apk/repositories
-RUN curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub
-RUN openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout
-RUN mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/
-RUN apk add nginx && \
-    chown -R www-data:www-data /var/log/nginx && \
-    chown -R www-data:www-data /var/www/html
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY h5bp /etc/nginx/h5bp
+        | tee -a /etc/apk/repositories && \
+        curl -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub && \
+        openssl rsa -pubin -in /tmp/nginx_signing.rsa.pub -text -noout && \
+        mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/ && \
+        apk add nginx && \
+        chown -R www-data:www-data /var/log/nginx && \
+        chown -R www-data:www-data /var/www/html && \
+	mv nginx.conf /etc/nginx/nginx.conf
 
 # Install Brotli
 RUN apk add --update --no-cache git bash curl make build-base pcre-dev zlib-dev \
@@ -99,14 +98,14 @@ RUN apk add --update --no-cache git bash curl make build-base pcre-dev zlib-dev 
     && sed -i '1iload_module modules/ngx_http_brotli_filter_module.so; load_module modules/ngx_http_brotli_static_module.so;' /etc/nginx/nginx.conf
 
 # Configure Supervisor
-COPY supervisord.conf /etc/supervisord.conf
+RUN mv supervisord.conf /etc/supervisord.conf
 
 # Cleanup dev dependencies
 RUN apk del -f .build-deps
 
 # Entrypoint Script
-COPY start-container /usr/local/bin/start-container
-RUN chmod +x /usr/local/bin/start-container
+RUN mv start-container /usr/local/bin/start-container && \
+    chmod +x /usr/local/bin/start-container
 
 # Expose Nginx Port
 EXPOSE 8080
